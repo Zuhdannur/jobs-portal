@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - scraper
+    networks:
+      - app-network
+    command: npm run dev
+
+  # Scraping Service (Python)
+  scraper:
+    build:
+      context: ./scraper
+      dockerfile: Dockerfile
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - CLOUDFLARE_API_KEY=${CLOUDFLARE_API_KEY}
+      - SCRAPER_LOG_LEVEL=${SCRAPER_LOG_LEVEL:-INFO}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+    volumes:
+      - ./scraper:/app
+      - ./scraper/logs:/app/logs
+    depends_on:
+      - redis
+    networks:
+      - app-network
+    command: python main.py
+
+  # Redis for caching and job queue
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+
+  # Celery Worker (optional - for distributed scraping)
+  celery-worker:
+    build:
+      context: ./scraper
+      dockerfile: Dockerfile
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - CLOUDFLARE_API_KEY=${CLOUDFLARE_API_KEY}
+      - CELERY_WORKER=1
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ./scraper:/app
+    depends_on:
+      - redis
+    networks:
+      - app-network
+    command: celery -A tasks worker --loglevel=info
+    profiles:
+      - celery
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+  scraper-logs:

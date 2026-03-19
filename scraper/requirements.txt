@@ -1,0 +1,35 @@
+# Web Scraping
+beautifulsoup4==4.12.3
+requests==2.32.3
+selenium==4.27.1
+playwright==1.49.1
+lxml==5.3.0
+scrapy==2.12.0
+
+# Database
+supabase==2.10.0
+psycopg2-binary==2.9.10
+
+# Cloudflare MCP (via Puppeteer/Playwright for browser automation)
+# Using Playwright for browser automation which provides similar capabilities
+
+# Utils
+python-dotenv==1.0.1
+pydantic==2.10.4
+python-dateutil==2.9.0
+tenacity==9.0.0
+httpx==0.28.1
+
+# Logging and monitoring
+structlog==24.4.0
+
+# Scheduling
+APScheduler==3.11.0
+celery==5.4.0
+redis==5.2.1
+
+# Development
+pytest==8.3.4
+black==24.10.0
+flake8==7.1.1
+mypy==1.14.1
